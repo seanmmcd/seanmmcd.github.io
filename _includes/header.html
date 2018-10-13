@@ -1,28 +1,16 @@
-<!-- Wrapper -->
-<div id="wrapper">
-
-	<!-- Header -->
-		<header id="header">
-			<div class="logo">
-				<span class="icon {{ site.icon }}"></span>
-			</div>
-			<div class="content">
-				<div class="inner">
-					<h1>{{ site.title }}</h1>
-					<p>{{ site.description }}</p>
-				</div>
-			</div>
-			<nav>
-				<ul>
-					{% for page in site.pages  %}
-					{% if page.title %}
-					<!-- page.path is: {{ page.path }} -->
-					<li><a href="#{{ page.title }}">{{ page.title }}</a></li>
-					{% endif %}
-					{% endfor %}
-				</ul>
-			</nav>
-		</header>
-
-	<!-- Main -->
-		<div id="main">
+    <!-- Intro Header -->
+    <header class="intro">
+        <div class="intro-body">
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-8 col-md-offset-2">
+                        <h1 class="brand-heading">{{ site.title }}</h1>
+                        <p class="intro-text">{{ site.description }}<br>
+                        <a href="#about" class="btn btn-circle page-scroll">
+                            <i class="fa fa-angle-double-down animated"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
