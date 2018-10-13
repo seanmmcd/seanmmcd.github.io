@@ -267,7 +267,7 @@ a:focus {
 .project-OWL-section {
     width: 100%;
     padding: 50px 0;
-    color: #fff;
+    color: #4286f4;
     background: url(/img/project-owl.jpg) no-repeat center center scroll;
     background-color: {{ site.color.primary-dark }};
     -webkit-background-size: cover;
@@ -279,7 +279,7 @@ a:focus {
 .project-RUNELITE-section {
     width: 100%;
     padding: 50px 0;
-    color: #fff;
+    color: {{ site.color.links }};
     background: url(/img/project-runelite.png) no-repeat center center scroll;
     background-color: {{ site.color.primary-dark }};
     -webkit-background-size: cover;
