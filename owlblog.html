@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OWLBlog</title>
+    <link rel="stylesheet" href="assets/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="assets/fonts/ionicons.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lora">
+    <link rel="stylesheet" href="assets/css/Article-Clean.css">
+    <link rel="stylesheet" href="assets/css/Navigation-Clean.css">
+    <link rel="stylesheet" href="assets/css/Social-Icons.css">
+    <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+
+<body>
+    <div></div>
+    <div>
+        <nav class="navbar navbar-light navbar-expand-md navigation-clean">
+            <div class="container"><a class="navbar-brand" href="#">Sean McDonough</a><button class="navbar-toggler" data-toggle="collapse" data-target="#navcol-1"><span class="sr-only">Toggle navigation</span><span class="navbar-toggler-icon"></span></button>
+                <div class="collapse navbar-collapse"
+                    id="navcol-1">
+                    <ul class="nav navbar-nav ml-auto">
+                        <li class="nav-item" role="presentation"><a class="nav-link" href="#">Return Home</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </div>
+    <div class="article-clean" style="height:2500px;">
+        <div class="container" style="height:2400px;">
+            <div class="row" style="height:2500px;">
+                <div class="col-lg-10 col-xl-8 offset-lg-1 offset-xl-2" style="height:2500px;">
+                    <div class="intro">
+                        <h1 class="text-center">OWL-J Development</h1>
+                        <p class="text-center"><span class="by">by</span> <a href="#">Sean Mcdonough</a><span class="date">october 13, 2018</span></p><img class="img-fluid" src="assets/img/OWL-BLOG-HEADER.jpg"></div>
+                    <div class="text">
+                        <p>One of the first things I noticed when watching the Overwatch League was that outside of the Official Blizzard Streams, there was no quick way to access team rankings or roster information. I had to navigate to a team page to see
+                            specific roster information, then go back to the standings screen, pick the division from the drop down menu, and then finally see how my favorite team was doing.&nbsp;</p>
+                        <p>Eventually, I realized I could develop a no-fluff desktop application that allowed for users to pull loads of information publically available at the Blizzard OWL API. I browsed through the trove of information provided, finding
+                            player information, roster setups, and social accounts, and developed a UI to seamlessly move a user from opening the client to viewing team information in under 6 seconds.&nbsp;</p>
+                        <h2>My First Exposure to JSON.</h2>
+                        <p>One of the earliest roadblocks for this program was my nonexistent exposure to web based API data formats, like JSON. Most tutorials covered straightforward, 4 item JSON objects. Converting this into a workable understanding that
+                            could be applied to a 54,000 line JSON object was quite a daunting task. After some testing, mock-ups, and the use of JSON hierarchy formatters, I was parsing data in Java structures.</p>
+                        <figure><img class="figure-img" src="assets/img/OWL-BLOG-JSON.jpg">
+                            <figcaption>One of the better online JSON visualizers out there.&nbsp;</figcaption>
+                        </figure>
+                        <p>After figuring out the lay of the land with JSON, the next step was working through an enormous amount of inconsistencies in roster, player, and social information. Most of the first data sets I looked through showed complete information;
+                            all players had social accounts, rosters were full, and all players had headshots available. Lower tier teams however, had little of this. Rosters like Shanghai's had 3 players, opposed to the typical 8 man roster. Some players
+                            had been moved between teams, but had been unannounced; leaving a ghost profile in the roster, missing all information.&nbsp;</p>
+                        <p>This was one of the tougher aspects of the project. Missing information was never consistent. Some players were missing names, player ID's, or had no statistics whatsoever. I opted for the approach where any player that didn't
+                            have a basic information profile complete, would be marked as an "Unknown" player. I defined a basic information profile as a player having a Name, PlayerID, and a Headshot. Any other incomplete profiles were ignored entirely.&nbsp;</p>
+                        <figure><img class="figure-img" src="assets/img/OWL-BLOG-CLIENT.jpg">
+                            <figcaption>The finished product! Due to the offseason, there isn't any data for team rankings.</figcaption>
+                        </figure>
+                        <p>The UI was pretty straightforward, but was an awesome learning experience. I had never used FXML before, and picked it up really quickly. I found working with it to be fun, and easy to use. Linking entities from a markup language
+                            to apply functions and event handling was also quite enjoyable. This was also one of the first projects where I had to work with creating JAR files, and that was another great learning experience. Refactoring my code to work
+                            with dynamic file locations, etc.</p>
+                        <p>Overall, this is definitely one of my favorite projects to date. I really enjoyed devloping a solution to a real world problem I had encountered. It seemed like each idea I had came to me so easily, and every implementation was
+                            super fluid. Other than my Runelite contributions, I definitely feel like this was my favorite project.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="social-icons"><a href="#"><i class="icon ion-social-github"></i></a><a href="#"><i class="icon ion-email"></i></a><a href="#"><i class="icon ion-social-linkedin"></i></a><a href="#"></a></div>
+    <script src="assets/js/jquery.min.js"></script>
+    <script src="assets/bootstrap/js/bootstrap.min.js"></script>
+</body>
+
+</html>
