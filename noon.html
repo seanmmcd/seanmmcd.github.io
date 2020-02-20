@@ -1,0 +1,413 @@
+<html>
+
+<head>
+  <title>Daytime Storybook</title>
+  <style>
+    body {
+      margin: 0;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%
+    }
+  </style>
+</head>
+
+<body>
+  <script src="three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/92/three.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.4.1.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+  <script type="text/javascript" src="OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r92/examples/js/loaders/GLTFLoader.js"></script>
+  <!--Import ModelLoader.js here-->
+  <script>
+    //Created by Sean, Adam, Josh, and Andi
+    //If possible, comments read best if you collapse everything. All relevant modules are placed inside {} brackets to increase readability.
+    //Each section will have a brief description detailing what was used to create the CG effect. 
+    //2019 Computer Graphics, University of Massachusetts Dartmouth, Professor Fang
+    //All assets currently in used are hosted at https://github.com/seanmmcd/group8project, with sources.
+    
+    var scene, renderer;
+    var camera;
+    var mesh;
+    var mixer;
+    var mixerFarmer;
+    var renderer = new THREE.WebGLRenderer({
+      antialias: true
+    });
+    var clock = new THREE.Clock();
+    var isMouseDown = false;
+
+    
+    
+    function init() {
+      
+      //Basic scene creation, also initialized a render window that utilized Anti-Aliasing
+      {
+      scene = new THREE.Scene();
+      renderer = new THREE.WebGLRenderer();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      var axisHelper = new THREE.AxisHelper(20);
+      document.body.appendChild(renderer.domElement);
+      renderer.setClearColor(0x00ffff, 1);
+      renderer.gammaOutput = true;
+      } //Scene/Renderer
+      
+      //Orbital Controls, Zooming, Maneuvering as discussed and laid out in class.
+      {
+      camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+      var cameraControls = new THREE.OrbitControls(camera);
+      camera.position.x = -50;
+      camera.position.y = 50;
+      camera.position.z = -50;
+      camera.lookAt(new THREE.Vector3(20, 0, 15));
+      camera.updateProjectionMatrix();
+      $(cameraControls).on("change", renderScene);
+      cameraControls.target = new THREE.Vector3(20, 0, 15);
+      } //Camera
+      
+      //Utilized an overhead lighting solution to create a reflective moon/sun in the river's modified phong surface. 
+      {
+      var light = new THREE.DirectionalLight("#c1582d", 1.3);
+      var ambient = new THREE.AmbientLight("#85b2cd", .87);
+      light.position.set(0, 15, 2).normalize();
+      scene.add(light);
+      scene.add(ambient);
+      } //Lighting 
+      
+      //Texture importer, used to obtain skybox textures for a multitextured cube which functioned as a skybox in both day and night. 
+      {
+      var texture = new THREE.Texture();
+      var manager = new THREE.LoadingManager();
+      manager.onProgress = function(item, loaded, total) {};
+      var onProgress = function(xhr) {};
+      var onError = function(xhr) {};
+      } //Asset Loader
+      
+      //Model importer to source our models into the project. 
+      {
+      var loader = new THREE.GLTFLoader();
+      var gltfStore = {};
+      } //Model Importer
+      
+      //Models imported.
+      {
+      loader.load(
+        // resource URL
+        'https://cdn.jsdelivr.net/gh/seanmmcd/group8project/test.glb',
+        // called when the resource is loaded
+        function(gltf) {
+          mesh = gltf.scene;
+          mesh.scale.set(1, 1, 1);
+          mixer = new THREE.AnimationMixer(mesh);
+          var clip = gltf.animations[0];
+          var action = mixer.clipAction(clip);
+          action.play();
+          scene.add(mesh); 
+          animate();
+          //scene.add( gltf.scene );
+          //gltf.animations; // Array<THREE.AnimationClip>
+          //gltf.scene; // THREE.Scene
+          //gltf.scenes; // Array<THREE.Scene>
+          //gltf.cameras; // Array<THREE.Camera>
+          //gltf.asset; // Object
+          
+        },
+        // called when loading is in progresses
+        function(xhr) {
+          console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+        },
+        // called when loading has errors
+        function(error) {
+          console.log('An error happened');
+        }
+      );
+      } //Our book. This also functioned as a phong surface which was established in blender, and then imported into threejs to properly enable the contrasting surfaces.
+      {
+      loader.load(
+        // resource URL
+        'https://cdn.jsdelivr.net/gh/seanmmcd/group8project/farmerdude.glb',
+        // called when the resource is loaded
+        function(gltf) {
+          farmer = gltf.scene;
+          farmer.scale.set(.05, .05, .05);
+          farmer.position.set(25, -2.93, -8);
+          //mixerFarmer = new THREE.AnimationMixer(farmer);
+          //var clipF = gltf.animations[1];
+          //var actionF = mixer.clipAction(clipF);
+          //actionF.play();
+          scene.add(farmer);
+          animate();
+          //scene.add( gltf.scene );
+          //gltf.animations; // Array<THREE.AnimationClip>
+          //gltf.scene; // THREE.Scene
+          //gltf.scenes; // Array<THREE.Scene>
+          //gltf.cameras; // Array<THREE.Camera>
+          //gltf.asset; // Object
+        },
+        // called when loading is in progresses
+        function(xhr) {
+          console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+        },
+        // called when loading has errors
+        function(error) {
+          console.log('An error happened');
+        }
+      );
+      } //Farmer. 
+      {
+        var rainCount = 16000;
+        rainGeo = new THREE.Geometry();
+        for (let i = 0; i < rainCount; i++) {
+          var cloudSpawn = randInt(1,4);
+
+          switch(cloudSpawn) {
+            //CLOUD 1
+            case 1 :
+              rainDrop = new THREE.Vector3(
+              Math.random() * 12 - 45,
+              Math.random() * 27 - 5,
+              Math.random() * 8 +11
+              );
+              break;
+              
+            //CLOUD 2
+            case 2 :
+              rainDrop = new THREE.Vector3(
+              Math.random() * 7 - 33,
+              Math.random() * 34 - 5,
+              Math.random() * 5 + 7
+              );              
+              break;
+              
+            //CLOUD 3
+            case 3 :
+              rainDrop = new THREE.Vector3(
+              Math.random() * 16 +13,
+              Math.random() * 27 - 5,
+              Math.random() * 9 - 8
+              );              
+              break;
+            
+            //CLOUD 4
+            case 4 :
+              rainDrop = new THREE.Vector3(
+              Math.random() * 13 + 24,
+              Math.random() * 27 - 5,
+              Math.random() * 7 + 1 
+              );              
+              break;
+          }
+          
+          
+          
+          /*rainDrop = new THREE.Vector3(
+            Math.random() * 100 - 55,
+            Math.random() * 85,
+            Math.random() * 70 - 35
+          );*/
+          rainDrop.velocity = {};
+          rainDrop.velocity = 0;
+          rainGeo.vertices.push(rainDrop);
+        }
+        rainMaterial = new THREE.PointsMaterial({
+          color: 0x454590,
+          size: .1,
+          transparent: true
+        });
+        rain = new THREE.Points(rainGeo, rainMaterial);
+        scene.add(rain);
+      } //Rain. Used a rudimentary particle system to randomly shuffle particles between four different rain clouds.
+      {
+      loader.load(
+        // resource URL
+        'https://cdn.jsdelivr.net/gh/seanmmcd/group8project/torch.glb',
+        // called when the resource is loaded
+        function(gltf) {
+          mesh = gltf.scene;
+          mesh.scale.set(1, 1, 1);
+          scene.add(mesh);
+          //scene.add( gltf.scene );
+          //gltf.animations; // Array<THREE.AnimationClip>
+          //gltf.scene; // THREE.Scene
+          //gltf.scenes; // Array<THREE.Scene>
+          //gltf.cameras; // Array<THREE.Camera>
+          //gltf.asset; // Object
+          var clips = mesh.animations;
+        },
+        // called when loading is in progresses
+        function(xhr) {
+          console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+        },
+        // called when loading has errors
+        function(error) {
+          console.log('An error happened');
+        }
+      );
+      } //Torch Import
+      {
+        loader.load(
+        // resource URL
+        'https://cdn.jsdelivr.net/gh/seanmmcd/group8project/clouds/cloud1.glb',
+        // called when the resource is loaded
+        function(gltf) {
+          mesh = gltf.scene;
+          mesh.scale.set(7, 7, 7);
+          mesh.position.set(21, 18, -7);
+          scene.add(mesh);
+          //scene.add( gltf.scene );
+          //gltf.animations; // Array<THREE.AnimationClip>
+          //gltf.scene; // THREE.Scene
+          //gltf.scenes; // Array<THREE.Scene>
+          //gltf.cameras; // Array<THREE.Camera>
+          //gltf.asset; // Object
+          var clips = mesh.animations;
+        },
+        // called when loading is in progresses
+        function(xhr) {
+          console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+        },
+        // called when loading has errors
+        function(error) {
+          console.log('An error happened');
+        }
+      );
+      } //Cloud 1 Import.
+      {
+        loader.load(
+        // resource URL
+        'https://cdn.jsdelivr.net/gh/seanmmcd/group8project/clouds/cloud2.glb',
+        // called when the resource is loaded
+        function(gltf) {
+          mesh = gltf.scene;
+          mesh.scale.set(7, 7, 7);
+          mesh.position.set(30, 22, -4);
+          scene.add(mesh);
+          //scene.add( gltf.scene );
+          //gltf.animations; // Array<THREE.AnimationClip>
+          //gltf.scene; // THREE.Scene
+          //gltf.scenes; // Array<THREE.Scene>
+          //gltf.cameras; // Array<THREE.Camera>
+          //gltf.asset; // Object
+          var clips = mesh.animations;
+        },
+        // called when loading is in progresses
+        function(xhr) {
+          console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+        },
+        // called when loading has errors
+        function(error) {
+          console.log('An error happened');
+        }
+      );
+      } //Cloud 2 Import.
+      {
+        loader.load(
+        // resource URL
+        'https://cdn.jsdelivr.net/gh/seanmmcd/group8project/clouds/cloud3.glb',
+        // called when the resource is loaded
+        function(gltf) {
+          mesh = gltf.scene;
+          mesh.scale.set(7, 7, 7);
+          mesh.position.set(-30, 22, 3);
+          scene.add(mesh);
+          //scene.add( gltf.scene );
+          //gltf.animations; // Array<THREE.AnimationClip>
+          //gltf.scene; // THREE.Scene
+          //gltf.scenes; // Array<THREE.Scene>
+          //gltf.cameras; // Array<THREE.Camera>
+          //gltf.asset; // Object
+          var clips = mesh.animations;
+        },
+        // called when loading is in progresses
+        function(xhr) {
+          console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+        },
+        // called when loading has errors
+        function(error) {
+          console.log('An error happened');
+        }
+      );
+      } //Cloud 3 Import.
+      {
+        loader.load(
+        // resource URL
+        'https://cdn.jsdelivr.net/gh/seanmmcd/group8project/clouds/cloud4.glb',
+        // called when the resource is loaded
+        function(gltf) {
+          mesh = gltf.scene;
+          mesh.scale.set(7, 7, 7);
+          mesh.position.set(-40, 22, 10);
+          scene.add(mesh);
+          //scene.add( gltf.scene );
+          //gltf.animations; // Array<THREE.AnimationClip>
+          //gltf.scene; // THREE.Scene
+          //gltf.scenes; // Array<THREE.Scene>
+          //gltf.cameras; // Array<THREE.Camera>
+          //gltf.asset; // Object
+          var clips = mesh.animations;
+        },
+        // called when loading is in progresses
+        function(xhr) {
+          console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+        },
+        // called when loading has errors
+        function(error) {
+          console.log('An error happened');
+        }
+      );
+      } //Cloud 4 Import.
+      
+      //Our skybox, made using a simple free skybox which can be found on github. Wrapped using threejs cubemap texture functionality. 
+      {
+      const loader2 = new THREE.CubeTextureLoader();
+      const skyboxTexture = loader2.load([
+        'https://cdn.jsdelivr.net/gh/seanmmcd/group8project/skybox/neg-x.png',
+        'https://cdn.jsdelivr.net/gh/seanmmcd/group8project/skybox/pos-x.png',
+        'https://cdn.jsdelivr.net/gh/seanmmcd/group8project/skybox/pos-z.png',
+        'https://cdn.jsdelivr.net/gh/seanmmcd/group8project/skybox/neg-z.png',
+        'https://cdn.jsdelivr.net/gh/seanmmcd/group8project/skybox/neg-y.png',
+        'https://cdn.jsdelivr.net/gh/seanmmcd/group8project/skybox/pos-y.png',
+      ]);
+      scene.background = skyboxTexture;
+      } //Skybox
+ 
+      animate();
+    }
+
+    function update() {
+    }
+    
+    //This function uses a mix of keyframe animations for our farmer, and morph target animations for the overall map. It also handles our rain.
+    function animate() {
+      requestAnimationFrame(animate);
+      rainGeo.vertices.forEach(p => {
+        p.velocity = -0.19 /*+ Math.random() * 0.01*/ ;
+        p.y += p.velocity;
+        if (p.y < -5) {
+          p.y = 22 - Math.random();
+          //p.velocity = 0;
+        }
+      }); //Snow movement
+      rainGeo.verticesNeedUpdate = true;
+      var delta = clock.getDelta();
+      mixer.update(delta);
+      //mixerFarmer.update(delta);
+      renderer.render(scene, camera);
+
+    }
+
+    function renderScene() {
+      renderer.render(scene, camera);
+    }
+    
+    function randInt(min, max) { // min and max included 
+      return Math.floor(Math.random() * (max - min + 1) + min);
+    }
+    
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,273 @@
+<html> 
+
+<head>
+  <title>Nighttime Storybook</title>
+  <style>
+    body {
+      margin: 0;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%
+    }
+  </style>
+</head>
+
+<body>
+  <script src="three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/92/three.min.js"></script>
+  <script type="text/javascript" src="jquery-2.1.3.min.js"></script>
+  <script type="text/javascript" src="OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r92/examples/js/loaders/GLTFLoader.js"></script>
+  <!--Import ModelLoader.js here-->
+  <script>
+    //Created by Sean, Adam, Josh, and Andi
+    //If possible, comments read best if you collapse everything. All relevant modules are placed inside {} brackets to increase readability.
+    //Each section will have a brief description detailing what was used to create the CG effect. 
+    //2019 Computer Graphics, University of Massachusetts Dartmouth, Professor Fang
+    //All assets currently in used are hosted at https://github.com/seanmmcd/group8project, with sources.
+    
+    //This file is similar to our first file, excluding the nighttime lighting which was created using a soft, white light rather than a harsh orangeish light.
+    //Most of the comments for our projects techniques are in the noon.html file, as a lot was reused for this file, we only commented what we hadn't touched on before in this file.
+    //It also features global snow rather than isolated rain, and a system which allowed for a dimly lit castle.
+    //The skybox was simply swapped out for a nighttime skybox.
+    
+    //The majority of comments detailing our project's cg techniques are in noon.html, not night.html. This only touches upon night lighting, our new skybox, and a modified snow system.
+    
+    var scene, renderer;
+    var camera;
+    var mesh;
+    var anvil;
+    var mixer;
+    var actions = {};
+    var clock = new THREE.Clock();
+    var renderer = new THREE.WebGLRenderer({
+      antialias: false
+    });
+    var isMouseDown = false;
+
+    function init() {
+      {
+        scene = new THREE.Scene();
+        renderer = new THREE.WebGLRenderer({antialias: false});
+        clock = new THREE.Clock();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+        scene.fog = new THREE.FogExp2(0x11111f, 0.002);
+        renderer.setClearColor(scene.fog.color);
+        renderer.setClearColor(0x00ffff, 1);
+        renderer.gammaOutput = true;
+      } //Render/Scene Setup
+      {
+        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        var cameraControls = new THREE.OrbitControls(camera);
+        var axisHelper = new THREE.AxisHelper(20);
+        camera.position.x = -50;
+        camera.position.y = 50;
+        camera.position.z = -50;
+        camera.lookAt(new THREE.Vector3(20, 0, 15));
+        camera.updateProjectionMatrix();
+        cameraControls.target = new THREE.Vector3(20, 0, 15);
+      } //Camera
+      
+      //Our lighting here is for the moon, which dimly illuminates the entire scene in a soft white light. 
+      {
+        var light = new THREE.DirectionalLight("#FFFFFF", .009);
+        var ambient = new THREE.AmbientLight("#FFFFFF", .04);
+        light.position.set(0, 350, 1).normalize();
+        scene.add(light);
+        scene.add(ambient);
+      } //Lighting
+      
+      //Global Snow, rather than isolated clouds.
+      {
+        var rainCount = 8000;
+        rainGeo = new THREE.Geometry();
+        for (let i = 0; i < rainCount; i++) {
+          rainDrop = new THREE.Vector3(
+            Math.random() * 100 - 55,
+            Math.random() * 85,
+            Math.random() * 70 - 35
+          );
+          rainDrop.velocity = {};
+          rainDrop.velocity = 0;
+          rainGeo.vertices.push(rainDrop);
+        }
+        rainMaterial = new THREE.PointsMaterial({
+          color: 0xaaaaaa,
+          size: 0.1,
+          transparent: true
+        });
+        rain = new THREE.Points(rainGeo, rainMaterial);
+        scene.add(rain);
+      } //Snow
+      
+      //Mood lighting placed on our castle walls to emulate a dimly lit torch, and braziers in the castle's towers. 
+      {
+        var torchLight1 = new THREE.PointLight(0xFF5A00, .8, 6.4, 2);
+        torchLight1.position.set(-10, 9, -5);
+        scene.add(torchLight1);
+        var torchLight2 = new THREE.PointLight(0xFF5A00, .8, 6.4, 2);
+        torchLight2.position.set(-10, 9, -26);
+        scene.add(torchLight2);
+        var torchLight3 = new THREE.PointLight(0xFF5A00, .8, 6.4, 2);
+        torchLight3.position.set(-25, 12, -5);
+        scene.add(torchLight3);
+        var torchLight4 = new THREE.PointLight(0xFF5A00, .8, 6.4, 2);
+        torchLight4.position.set(-25, 12, -26);
+        scene.add(torchLight4);
+        var torchLight5 = new THREE.PointLight(0xFF5A00, .3, 6, 2);
+        torchLight5.position.set(-8, 5, -13);
+        scene.add(torchLight5);
+        var torchLight6 = new THREE.PointLight(0xFF5A00, .3, 6, 2);
+        torchLight6.position.set(-8, 5, -19);
+        scene.add(torchLight6);
+      } //Castle Torches
+      {
+        var texture = new THREE.Texture();
+        var manager = new THREE.LoadingManager();
+        manager.onProgress = function(item, loaded, total) {};
+        var onProgress = function(xhr) {};
+        var onError = function(xhr) {};
+      } //Asset Loading
+      {
+        var loader = new THREE.GLTFLoader();
+        var gltfStore = {};
+      } //Model Importer
+      {
+        // Load a glTF resource
+        loader.load(
+          // resource URL
+          'https://cdn.jsdelivr.net/gh/seanmmcd/group8project/test.glb',
+          // called when the resource is loaded
+          function(gltf) {
+            mesh = gltf.scene;
+            mesh.scale.set(1, 1, 1);
+            mixer = new THREE.AnimationMixer(mesh);
+            var clip = gltf.animations[0];
+            var action = mixer.clipAction(clip);
+            action.play();
+            scene.add(mesh);
+            animate();
+            //scene.add( gltf.scene );
+            //gltf.animations; // Array<THREE.AnimationClip>
+            //gltf.scene; // THREE.Scene
+            //gltf.scenes; // Array<THREE.Scene>
+            //gltf.cameras; // Array<THREE.Camera>
+            //gltf.asset; // Object
+            var clips = mesh.animations;
+          },
+          // called when loading is in progresses
+          function(xhr) {
+            console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+          },
+          // called when loading has errors
+          function(error) {
+            console.log('An error happened');
+          }
+        );
+      } //BOOK IMPORT
+      {
+        loader.load(
+          // resource URL
+          'https://cdn.jsdelivr.net/gh/seanmmcd/group8project/farmerdude.glb',
+          // called when the resource is loaded
+          function(gltf) {
+            mesh = gltf.scene;
+            mesh.scale.set(.08, .08, .08);
+            mesh.position.set(-11, 8, -7);
+            scene.add(mesh);
+            //scene.add( gltf.scene );
+            //gltf.animations; // Array<THREE.AnimationClip>
+            //gltf.scene; // THREE.Scene
+            //gltf.scenes; // Array<THREE.Scene>
+            //gltf.cameras; // Array<THREE.Camera>
+            //gltf.asset; // Object
+            var clips = mesh.animations;
+          },
+          // called when loading is in progresses
+          function(xhr) {
+            console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+          },
+          // called when loading has errors
+          function(error) {
+            console.log('An error happened');
+          }
+        );
+      } //FARMER MODEL IMPORT
+      {
+        loader.load(
+          // resource URL
+          'https://cdn.jsdelivr.net/gh/seanmmcd/group8project/torch.glb',
+          // called when the resource is loaded
+          function(gltf) {
+            mesh = gltf.scene;
+            mesh.scale.set(1, 1, 1);
+            scene.add(mesh);
+            scene.add( gltf.scene );
+            gltf.animations; // Array<THREE.AnimationClip>
+            gltf.scene; // THREE.Scene
+            gltf.scenes; // Array<THREE.Scene>
+            gltf.cameras; // Array<THREE.Camera>
+            gltf.asset; // Object
+            var clips = mesh.animations;
+          },
+          // called when loading is in progresses
+          function(xhr) {
+            console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+          },
+          // called when loading has errors
+          function(error) {
+            console.log('An error happened');
+          }
+        );
+      } //TORCH MODEL IMPORT
+      {
+        const loader2 = new THREE.CubeTextureLoader();
+        const skyboxTexture = loader2.load([
+          'https://cdn.jsdelivr.net/gh/seanmmcd/group8project/skybox/night/sb_space_front.png',
+          'https://cdn.jsdelivr.net/gh/seanmmcd/group8project/skybox/night/sb_space_back.png',
+          'https://cdn.jsdelivr.net/gh/seanmmcd/group8project/skybox/night/sb_space_right.png',
+          'https://cdn.jsdelivr.net/gh/seanmmcd/group8project/skybox/night/sb_space_bottom.png',
+          'https://cdn.jsdelivr.net/gh/seanmmcd/group8project/skybox/night/sb_space_left.png',
+          'https://cdn.jsdelivr.net/gh/seanmmcd/group8project/skybox/night/sb_space_top.png',
+        ]);
+        scene.background = skyboxTexture;
+      }//SKYBOX IMPORT
+      render();
+    }
+
+    function animate() {
+    }
+
+    function update() {
+      cameraControls.update();
+      mixer.update(deltaSeconds);
+    }
+
+    function animate() {
+      rainGeo.vertices.forEach(p => {
+        p.velocity = -0.09 /*+ Math.random() * 0.01*/ ;
+        p.y += p.velocity;
+        if (p.y < -5) {
+          p.y = 80 - Math.random();
+          //p.velocity = 0;
+        }
+      }); //Snow movement
+      rainGeo.verticesNeedUpdate = true;
+      var delta = clock.getDelta();
+      mixer.update(delta);
+      //rain.rotation.y +=0.002;
+      renderer.render(scene, camera);
+      requestAnimationFrame(animate);
+    }
+
+    function renderScene() {
+      renderer.render(scene, camera);
+    }
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+
+</html>
